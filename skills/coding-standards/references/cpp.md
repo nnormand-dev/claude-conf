@@ -49,6 +49,15 @@
 - `constexpr` quand la valeur est connue à la compilation.
 - Préfère les objets immuables ; limite l'état mutable partagé.
 
+## Paramètres de sortie
+
+`void f(std::string& out)` ne se voit pas à l'appel : `f(s)` a l'air d'une
+lecture. Préfère un retour par valeur (structure nommée si plusieurs valeurs) ;
+à défaut un pointeur, `f(&s)`, qui rend l'écriture visible et permet un
+paramètre optionnel (n'assigne que si non nul). La référence non constante reste
+tolérée pour une classe non standard quand le nom de la fonction l'annonce. Voir
+« Code de bibliothèque » dans le SKILL.
+
 ## Ne pas ignorer les résultats
 
 - **`[[nodiscard]]`** sur les fonctions dont ignorer le retour est un bug

@@ -103,6 +103,11 @@ vaut mieux qu'un bug en production.
   de travail (plans, `.md` non commités, numéros d'itération) — ça va dans
   le message de commit ou le ticket. Relis tes commentaires en fin de tâche
   et coupe avant de livrer.
+- **Un invariant se documente une fois, à sa source.** Le *pourquoi* d'un
+  contrat vit sur la déclaration qu'il contraint (le membre, le champ, le
+  type), pas sur chaque site qui le maintient. Un site incompréhensible sans
+  lui reçoit un pointeur court, jamais une copie. DRY s'applique aux
+  commentaires comme au code.
 - **Limite l'imbrication.** Préfère les retours anticipés (guard clauses)
   aux pyramides de `if` imbriqués.
 
@@ -145,6 +150,32 @@ vaut mieux qu'un bug en production.
   requêtes/commandes avec des entrées non échappées, attention aux données
   sensibles dans les logs.
 
+## Code de bibliothèque
+
+Une bibliothèque est consommée par un appelant qu'elle ne connaît pas. Ce qui
+est acceptable dans un `main()` ne l'est plus derrière une frontière d'API.
+
+- **Pas d'`exit()` (ni d'`abort()`) dans une bibliothèque**, sauf si c'est
+  nécessaire *et* annoncé clairement à l'utilisateur (nom, documentation,
+  `[[noreturn]]`). Sinon la bibliothèque confisque la durée de vie du process :
+  l'appelant ne peut plus nettoyer, réessayer, ni décider de continuer. Signal
+  d'alarme : une fonction devenue **intestable** parce qu'elle appelle `exit()`
+  — c'est le symptôme, pas une fatalité à contourner. Signale l'échec
+  (exception, code de retour) et laisse l'appelant décider.
+- **Pas d'écriture sur `stdout`/`stderr` dans une bibliothèque**, sauf si c'est
+  précisément son métier (un logger, un formateur). Sinon elle impose son flux,
+  son format et sa langue à un appelant qui a peut-être son propre logger.
+  Renvoie l'information ; l'appelant l'affiche où et comme il veut. Corollaire
+  utile : renvoie la valeur appliquée/calculée pour qu'il puisse la journaliser
+  sans la recalculer.
+- **Pas de paramètre de sortie par référence non constante** pour un type
+  standard ou scalaire : au site d'appel, `f(x)` ne montre pas que `x` est
+  modifié. Par ordre de préférence : retourner la valeur (une structure nommée
+  si elles sont plusieurs), puis le pointeur (`f(&x)`, visible à l'appel, et
+  qui permet un paramètre optionnel — n'écris alors que si le pointeur est non
+  nul). Tolérée pour une classe non standard (un `Packet`, un `Config`) quand
+  le nom de la fonction rend la modification évidente.
+
 ## Concurrence et parallélisme
 
 - L'état mutable partagé est la racine des *data races*. Le meilleur verrou
@@ -178,5 +209,7 @@ vaut mieux qu'un bug en production.
 
 - Relis le diff : as-tu modifié uniquement ce qui devait l'être (pas de
   changements orthogonaux non demandés) ?
+- Le même *pourquoi* apparaît-il à plus d'un endroit dans le diff ? Si oui,
+  garde-le à sa source et supprime les copies.
 - Le code passe-t-il les tests, le linter et l'analyse statique du projet ?
 - Une personne extérieure comprendrait-elle ce code sans explication orale ?
